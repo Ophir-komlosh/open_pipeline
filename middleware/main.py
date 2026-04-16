@@ -1,8 +1,8 @@
-import traceback
+import json
 
 from consts import *
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from prompt_injector import inject_system_prompt
 import httpx
 import uuid
@@ -12,6 +12,7 @@ app = FastAPI()
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
 
 @app.get(FULL_MODELS_PATH)
 async def list_models():
@@ -25,6 +26,51 @@ async def list_models():
             }
         ]
     }
+
+
+async def post_openai_response(body: dict, headers: dict, request_id: str) -> JSONResponse:
+    async with httpx.AsyncClient(timeout=None) as client:
+        response = await client.post(
+            f"{OPENAI_BASE_URL}{COMPLETIONS_PATH}",
+            json=body,
+            headers=headers,
+        )
+
+        if response.status_code != OK_STATUS_CODE:
+            return create_error_response(response.status_code, UPSTREAM_ERROR, response.text, request_id) 
+        
+        return response.json()
+
+
+async def stream_openai_response(body: dict, headers: dict, request_id: str):
+    async with httpx.AsyncClient(timeout=None) as client:
+        async with client.stream(HTTP_POST,
+            f"{OPENAI_BASE_URL}{COMPLETIONS_PATH}",
+            json=body,
+            headers=headers,
+        ) as response:
+
+            if response.status_code != OK_STATUS_CODE:
+                error_text = await response.aread()
+
+                try:
+                    error_details = json.loads(error_text.decode())
+                except Exception:
+                    error_details = {"raw_error": error_text.decode()}
+
+                payload = {
+                    "error": UPSTREAM_ERROR,
+                    "details": error_details,
+                    "request_id": request_id,
+                }
+
+                yield f"data: {json.dumps(payload)}\n\n".encode()
+                return
+
+            async for chunk in response.aiter_bytes():
+                if chunk:
+                    yield chunk
+
 
 @app.post(FULL_COMPLETIONS_PATH)
 async def chat_completions(request: Request) -> JSONResponse:
@@ -40,7 +86,7 @@ async def chat_completions(request: Request) -> JSONResponse:
         return create_error_response(BAD_REQUEST_CODE, INVALID_REQUEST, "'messages' must be a non-empty list", request_id) 
     
     body["messages"] = inject_system_prompt(messages, SYSTEM_PROMPT)
-    body["stream"] = False
+    stream = body.get("stream", False)
 
     headers = {
         AUTH_HEADER: AUTH_PROMPT,
@@ -48,23 +94,15 @@ async def chat_completions(request: Request) -> JSONResponse:
     }
     
     try:
-        async with httpx.AsyncClient(timeout=None) as client:
-            response = await client.post(
-                f"{OPENAI_BASE_URL}{COMPLETIONS_PATH}",
-                json=body,
-                headers=headers,
+        if stream:
+            return StreamingResponse(
+                stream_openai_response(body, headers, request_id),
+                media_type=STREAM_MEDIA_TYPE,
             )
 
-        if response.status_code != OK_STATUS_CODE:
-            return create_error_response(response.status_code, UPSTREAM_ERROR, response.text, request_id) 
-        
-        return response.json()
+        return await post_openai_response(body, headers, request_id)
 
     except Exception as e:
-        print("______________________________")
-        print("INTERNAL ERROR:", repr(e))
-        traceback.print_exc()
-        print("______________________________")
         return create_error_response(INTERNAL_SERVER_ERROR_CODE, INTERNAL_ERROR, str(e), request_id)
 
 
