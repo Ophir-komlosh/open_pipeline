@@ -1,6 +1,7 @@
 from consts import *
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from prompt_injector import inject_system_prompt
 import httpx
 import uuid
 
@@ -22,6 +23,8 @@ async def chat_completions(request: Request) -> JSONResponse:
 
     if not isinstance(messages, list) or len(messages) == EMPTY_MESSAGE_LENGTH:
         return create_error_response(BAD_REQUEST_CODE, INVALID_REQUEST, "'messages' must be a non-empty list", request_id) 
+    
+    body["messages"] = inject_system_prompt(messages, SYSTEM_PROMPT)
 
     headers = {
         AUTH_HEADER: AUTH_PROMPT,
@@ -37,12 +40,12 @@ async def chat_completions(request: Request) -> JSONResponse:
             )
 
         if response.status_code != OK_STATUS_CODE:
-            return create_error_response(response.status_code, "upstream_error", "response.text", request_id) 
+            return create_error_response(response.status_code, UPSTREAM_ERROR, response.text, request_id) 
         
         return response.json()
 
     except Exception as e:
-        return create_error_response(INTERNAL_SERVER_ERROR_CODE, "internal_error", str(e), request_id)
+        return create_error_response(INTERNAL_SERVER_ERROR_CODE, INTERNAL_ERROR, str(e), request_id)
 
 
 def create_error_response(status_code: int, error_type: str, details: str, request_id: str) -> JSONResponse:
