@@ -13,6 +13,13 @@ app = FastAPI()
 def health():
     return {"status": "ok"}
 
+@app.get("/ready")
+def ready():
+    return {
+        "status": "ready",
+        "has_api_key": bool(OPENAI_API_KEY)
+    }
+
 
 @app.get(FULL_MODELS_PATH)
 async def list_models():
