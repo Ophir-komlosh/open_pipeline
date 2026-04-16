@@ -20,7 +20,7 @@ async def list_models():
         "object": "list",
         "data": [
             {
-                "id": "gpt-4o-mini",
+                "id": CHAT_MODEL,
                 "object": "model",
                 "owned_by": "middleware"
             }
