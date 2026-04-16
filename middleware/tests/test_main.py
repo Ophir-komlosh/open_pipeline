@@ -1,6 +1,8 @@
 from fastapi.testclient import TestClient
-from consts import *
-from main import app
+from middleware.consts import *
+from middleware.main import app
+import middleware.main as main
+from middleware.tests.consts import *
 
 client = TestClient(app)
 
@@ -10,3 +12,60 @@ def test_health_check():
 
     assert response.status_code == OK_STATUS_CODE
     assert response.json() == {"status": "ok"}
+
+def test_models_returns_openai_compatible_shape():
+    response = client.get(FULL_MODELS_PATH)
+
+    assert response.status_code == OK_STATUS_CODE
+
+    data = response.json()
+    assert data["object"] == "list"
+    assert isinstance(data["data"], list)
+    assert data["data"][FIRST_MODEL_INDEX]["id"] == CHAT_MODEL
+    assert data["data"][FIRST_MODEL_INDEX]["object"] == "model"
+
+def test_missing_api_key(monkeypatch):
+    monkeypatch.setattr(main, "OPENAI_API_KEY", None)
+
+    response = client.post(
+        FULL_COMPLETIONS_PATH,
+        json={
+            "model": CHAT_MODEL,
+            "messages": [{"role": "user", "content": "hello"}],
+        },
+    )
+
+    assert response.status_code == INTERNAL_SERVER_ERROR_CODE
+    body = response.json()
+    assert body["error"] == CONFIGURATION_ERROR
+
+
+def test_message_missing(monkeypatch):
+    monkeypatch.setattr(main, "OPENAI_API_KEY", "test-key")
+
+    response = client.post(
+        FULL_COMPLETIONS_PATH,
+        json={
+            "model": CHAT_MODEL,
+        },
+    )
+
+    assert response.status_code == BAD_REQUEST_CODE
+    body = response.json()
+    assert body["error"] == INVALID_REQUEST
+
+
+def test_message_empty(monkeypatch):
+    monkeypatch.setattr(main, "OPENAI_API_KEY", "test-key")
+
+    response = client.post(
+        FULL_COMPLETIONS_PATH,
+        json={
+            "model": CHAT_MODEL,
+            "messages": [],
+        },
+    )
+
+    assert response.status_code == BAD_REQUEST_CODE
+    body = response.json()
+    assert body["error"] == INVALID_REQUEST
