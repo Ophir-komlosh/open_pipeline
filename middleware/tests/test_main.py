@@ -31,7 +31,7 @@ def test_missing_api_key(monkeypatch):
         FULL_COMPLETIONS_PATH,
         json={
             "model": CHAT_MODEL,
-            "messages": [{"role": "user", "content": "hello"}],
+            "messages": [{MESSAGE_ROLE: USER_ROLE, MESSAGE_CONTENT: CONTENT}],
         },
     )
 
