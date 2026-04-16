@@ -16,12 +16,12 @@ async def chat_completions(request: Request) -> JSONResponse:
     request_id = str(uuid.uuid4())
 
     if not OPENAI_API_KEY:
-        return send_error_response(INTERNAL_SERVER_ERROR_CODE, CONFIGURATION_ERROR, "OPENAI_API_KEY is not set", request_id) 
+        return create_error_response(INTERNAL_SERVER_ERROR_CODE, CONFIGURATION_ERROR, "OPENAI_API_KEY is not set", request_id) 
 
     messages = body.get("messages")
 
     if not isinstance(messages, list) or len(messages) == EMPTY_MESSAGE_LENGTH:
-        return send_error_response(BAD_REQUEST_CODE, INVALID_REQUEST, "'messages' must be a non-empty list", request_id) 
+        return create_error_response(BAD_REQUEST_CODE, INVALID_REQUEST, "'messages' must be a non-empty list", request_id) 
 
     headers = {
         AUTH_HEADER: AUTH_PROMPT,
@@ -37,15 +37,15 @@ async def chat_completions(request: Request) -> JSONResponse:
             )
 
         if response.status_code != OK_STATUS_CODE:
-            return send_error_response(response.status_code, "upstream_error", "response.text", request_id) 
+            return create_error_response(response.status_code, "upstream_error", "response.text", request_id) 
         
         return response.json()
 
     except Exception as e:
-        return send_error_response(INTERNAL_SERVER_ERROR_CODE, "internal_error", str(e), request_id)
+        return create_error_response(INTERNAL_SERVER_ERROR_CODE, "internal_error", str(e), request_id)
 
 
-def send_error_response(status_code: int, error_type: str, details: str, request_id: str) -> JSONResponse:
+def create_error_response(status_code: int, error_type: str, details: str, request_id: str) -> JSONResponse:
     return JSONResponse(
         status_code=status_code,
         content={
