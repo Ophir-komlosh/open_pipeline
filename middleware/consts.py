@@ -1,0 +1,43 @@
+import os
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_BASE_URL = "https://api.openai.com/v1"
+
+with open("SYSTEM_PROMPT.md", "r") as f:
+    SYSTEM_PROMPT = f.read()
+
+VERSION_PREFIX = "/v1"
+
+MODELS_PATH = "/models"
+COMPLETIONS_PATH = "/chat/completions"
+
+FULL_MODELS_PATH = VERSION_PREFIX + MODELS_PATH
+FULL_COMPLETIONS_PATH = VERSION_PREFIX + COMPLETIONS_PATH
+
+AUTH_HEADER = "Authorization"
+AUTH_PROMPT = f"Bearer {OPENAI_API_KEY}"
+
+CONTENT_TYPE_HEADER = "Content-Type"
+CONTENT_TYPE_PROMPT = "application/json"
+
+CONFIGURATION_ERROR = "configuration_error"
+INVALID_REQUEST = "invalid_request"
+UPSTREAM_ERROR = "upstream_error"
+INTERNAL_ERROR = "internal_error"
+
+INTERNAL_SERVER_ERROR_CODE = 500
+BAD_REQUEST_CODE = 400
+OK_STATUS_CODE = 200
+
+EMPTY_MESSAGE_LENGTH = 0
+
+HTTP_POST = "POST"
+STREAM_MEDIA_TYPE = "text/event-stream"
+
+CHAT_MODEL = "gpt-4o-mini"
+FIRST_MESSAGE_INDEX = 0
+MESSAGE_CONTENT = "content"
+
+MESSAGE_ROLE = "role"
+SYSTEM_ROLE = "system"
+USER_ROLE = "role"
