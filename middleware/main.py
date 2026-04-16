@@ -1,3 +1,5 @@
+import traceback
+
 from consts import *
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -11,7 +13,20 @@ app = FastAPI()
 def health():
     return {"status": "ok"}
 
-@app.post(FULL_PATH)
+@app.get(FULL_MODELS_PATH)
+async def list_models():
+    return {
+        "object": "list",
+        "data": [
+            {
+                "id": "gpt-4o-mini",
+                "object": "model",
+                "owned_by": "middleware"
+            }
+        ]
+    }
+
+@app.post(FULL_COMPLETIONS_PATH)
 async def chat_completions(request: Request) -> JSONResponse:
     body = await request.json()
     request_id = str(uuid.uuid4())
@@ -25,6 +40,7 @@ async def chat_completions(request: Request) -> JSONResponse:
         return create_error_response(BAD_REQUEST_CODE, INVALID_REQUEST, "'messages' must be a non-empty list", request_id) 
     
     body["messages"] = inject_system_prompt(messages, SYSTEM_PROMPT)
+    body["stream"] = False
 
     headers = {
         AUTH_HEADER: AUTH_PROMPT,
@@ -45,6 +61,10 @@ async def chat_completions(request: Request) -> JSONResponse:
         return response.json()
 
     except Exception as e:
+        print("______________________________")
+        print("INTERNAL ERROR:", repr(e))
+        traceback.print_exc()
+        print("______________________________")
         return create_error_response(INTERNAL_SERVER_ERROR_CODE, INTERNAL_ERROR, str(e), request_id)
 
 
