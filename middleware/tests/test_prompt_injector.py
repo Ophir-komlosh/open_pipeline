@@ -1,6 +1,6 @@
-from middleware.prompt_injector import inject_system_prompt as prompt_injector
-from middleware.tests.consts import *
-from middleware.consts import *
+from prompt_injector import inject_system_prompt as prompt_injector
+from tests.fixtures import *
+from consts import *
 
 
 def test_injects_system_prompt_when_first_message_is_user():

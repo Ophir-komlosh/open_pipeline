@@ -1,8 +1,8 @@
 from fastapi.testclient import TestClient
-from middleware.consts import *
-from middleware.main import app
-import middleware.main as main
-from middleware.tests.consts import *
+from main import app
+import main as main
+from tests.fixtures import *
+from consts import *
 
 client = TestClient(app)
 
