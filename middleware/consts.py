@@ -33,3 +33,11 @@ EMPTY_MESSAGE_LENGTH = 0
 
 HTTP_POST = "POST"
 STREAM_MEDIA_TYPE = "text/event-stream"
+
+CHAT_MODEL = "gpt-4o-mini"
+FIRST_MESSAGE_INDEX = 0
+MESSAGE_CONTENT = "content"
+
+MESSAGE_ROLE = "role"
+SYSTEM_ROLE = "system"
+USER_ROLE = "role"
