@@ -13,6 +13,17 @@ def test_health_check():
     assert response.status_code == OK_STATUS_CODE
     assert response.json() == {"status": "ok"}
 
+def test_ready_check(monkeypatch):
+    monkeypatch.setattr(main, "OPENAI_API_KEY", "test-key")
+
+    response = client.get("/ready")
+
+    assert response.status_code == OK_STATUS_CODE
+
+    data = response.json()
+    assert data["status"] == "ready"
+    assert data["has_api_key"] is True
+
 def test_models_returns_openai_compatible_shape():
     response = client.get(FULL_MODELS_PATH)
 
