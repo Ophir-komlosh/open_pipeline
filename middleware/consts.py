@@ -18,6 +18,8 @@ CONTENT_TYPE_PROMPT = "application/json"
 
 CONFIGURATION_ERROR = "configuration_error"
 INVALID_REQUEST = "invalid_request"
+UPSTREAM_ERROR = "upstream_error"
+INTERNAL_ERROR = "internal_error"
 
 INTERNAL_SERVER_ERROR_CODE = 500
 BAD_REQUEST_CODE = 400
